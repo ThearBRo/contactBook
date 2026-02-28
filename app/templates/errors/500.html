@@ -1,0 +1,10 @@
+{% extends 'layout/base.html' %} {% block title %}Server error — ContactBook{%
+endblock %} {% block content %}
+<div class="text-center py-5 animate__animated animate__fadeIn">
+  <h1 class="display-4">500</h1>
+  <p class="lead">Something went wrong on our side.</p>
+  <a class="btn btn-primary" href="{{ url_for('contact_bp.contacts') }}"
+    >Go home</a
+  >
+</div>
+{% endblock %}

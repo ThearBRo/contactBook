@@ -1,0 +1,112 @@
+{% extends 'layout/base.html' %} {% block title %}Contacts — ContactBook{%
+endblock %} {% block content %}
+<div class="row gy-4">
+  <div class="col-lg-4">
+    <div class="card card-dim p-4 animate__animated animate__fadeInLeft">
+      <h5 class="mb-3">Create Contact</h5>
+      <form method="post" action="{{ url_for('contact_bp.create_contact') }}">
+        {{ form.hidden_tag() }}
+        <div class="mb-2">
+          {{ form.name.label(class_='form-label') }} {{
+          form.name(class_='form-control') }}
+        </div>
+        <div class="mb-2">
+          {{ form.phone_number.label(class_='form-label') }} {{
+          form.phone_number(class_='form-control') }}
+        </div>
+        <button class="btn btn-primary mt-2">
+          <i class="fa-solid fa-plus me-2"></i>Add
+        </button>
+        <p class="mt-2 drag-hint">
+          Tip: drag contacts to reorder (client-side)
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card card-dim p-3">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="mb-0">Your Contacts</h5>
+        <div class="text-muted">Total: {{ current_user.contacts.count() }}</div>
+      </div>
+
+      <div id="contacts-list" class="row g-3" style="min-height: 120px">
+        {% for c in current_user.contacts %}
+        <div
+          class="col-md-6 contact-card animate__animated animate__fadeInUp"
+          data-id="{{ c.id }}"
+        >
+          <div class="card p-3">
+            <div class="d-flex align-items-start gap-3">
+              <div class="bg-light rounded-circle p-3">
+                <i class="fa-solid fa-user text-primary"></i>
+              </div>
+              <div class="flex-fill">
+                <div class="fw-semibold">{{ c.name }}</div>
+                <div class="text-muted small">{{ c.phone_number or '—' }}</div>
+              </div>
+              <div class="ms-2 d-flex flex-column gap-2">
+                <button class="btn btn-sm btn-outline-secondary">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center text-muted py-5">
+          No contacts yet — use the form to add one.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block scripts %} {{ super() }}
+<script>
+  // Smooth entrance animation
+  gsap.from(".contact-card", {
+    y: 20,
+    opacity: 0,
+    stagger: 0.05,
+    duration: 0.5,
+  });
+
+  // Enable drag & drop with SortableJS
+  const el = document.getElementById("contacts-list");
+  if (el) {
+    new Sortable(el, {
+      animation: 150,
+      handle: ".contact-card",
+      draggable: ".contact-card",
+      onEnd: function (evt) {
+        // collect order
+        const ids = Array.from(el.querySelectorAll(".contact-card")).map(
+          (n) => n.dataset.id,
+        );
+        fetch("{{ url_for('contact_bp.reorder_contacts') }}", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order: ids }),
+        })
+          .then((r) => r.json())
+          .then((j) => {
+            // subtle feedback
+            if (j.status === "ok") {
+              gsap.fromTo(
+                ".app-header",
+                { scale: 1 },
+                { scale: 1.01, duration: 0.12, yoyo: true, repeat: 1 },
+              );
+            }
+          });
+      },
+    });
+  }
+</script>
+{% endblock %}
